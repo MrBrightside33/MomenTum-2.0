@@ -9,5 +9,8 @@ php artisan view:cache || echo "view:cache failed"
 echo "Testing nginx config..."
 nginx -t
 
-echo "Starting supervisord..."
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+echo "Starting php-fpm..."
+php-fpm -D
+
+echo "Starting nginx..."
+exec nginx -g "daemon off;"

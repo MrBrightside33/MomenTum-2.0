@@ -26,7 +26,9 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
 COPY docker/render/nginx.conf /etc/nginx/sites-available/default
 COPY docker/render/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/render/start.sh /start.sh
-RUN chmod +x /start.sh
+RUN sed -i '1s/^\xEF\xBB\xBF//' /start.sh /etc/supervisor/conf.d/supervisord.conf /etc/nginx/sites-available/default \
+    && sed -i 's/\r$//' /start.sh /etc/supervisor/conf.d/supervisord.conf /etc/nginx/sites-available/default \
+    && chmod +x /start.sh
 
 EXPOSE 80
 
