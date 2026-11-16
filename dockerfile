@@ -1,3 +1,12 @@
+# Stage 1: build frontend assets
+FROM node:20-alpine AS assets
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Stage 2: PHP app
 FROM php:8.4-fpm
 
 # System tools and PHP extensions (includes nginx and supervisor)
@@ -14,6 +23,9 @@ WORKDIR /var/www
 
 # Copy your project code
 COPY . /var/www
+
+# Copy the built frontend assets from Stage 1 (this fixes the Vite manifest error)
+COPY --from=assets /app/public/build /var/www/public/build
 
 # Install PHP packages
 RUN composer install --no-dev --optimize-autoloader --no-interaction
