@@ -29,7 +29,8 @@ COPY docker/render/start.sh /start.sh
 RUN sed -i '1s/^\xEF\xBB\xBF//' /start.sh /etc/supervisor/conf.d/supervisord.conf /etc/nginx/sites-available/default \
     && sed -i 's/\r$//' /start.sh /etc/supervisor/conf.d/supervisord.conf /etc/nginx/sites-available/default \
     && chmod +x /start.sh
+RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
-EXPOSE 80
+EXPOSE 10000
 
 CMD ["/start.sh"]
