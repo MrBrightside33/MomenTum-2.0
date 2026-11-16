@@ -9,6 +9,9 @@ php artisan view:cache || echo "view:cache failed"
 echo "Testing nginx config..."
 nginx -t
 
+echo "nginx listen lines:"
+grep -R "listen" /etc/nginx/sites-enabled/ /etc/nginx/conf.d/ 2>/dev/null
+
 echo "Starting php-fpm..."
 php-fpm -D
 
