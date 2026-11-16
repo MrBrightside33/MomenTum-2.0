@@ -35,10 +35,13 @@ class DashboardController extends Controller
         }
 
         $localNow = now($timezone);
-        $taskCounts = $metrics->counts([
-            'user_id' => $user->getKey(),
-            'today' => $localNow->toDateString(),
-        ]);
+        $taskScope = ['today' => $localNow->toDateString()];
+
+        if (! $user->isManager()) {
+            $taskScope['user_id'] = $user->getKey();
+        }
+
+        $taskCounts = $metrics->counts($taskScope);
         $weekStart = $localNow->copy()->startOfWeek();
         $weekEnd = $weekStart->copy()->endOfWeek();
         $completedThisWeek = $metrics->completedActivity([

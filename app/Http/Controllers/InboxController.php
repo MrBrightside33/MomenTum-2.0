@@ -110,7 +110,11 @@ class InboxController extends Controller
             'task_assigned' => [$actor.' assigned you a task', 'users', 'bg-indigo-50 text-indigo-600'],
             'task_status_changed' => [$actor.' updated a task', 'check', 'bg-emerald-50 text-emerald-600'],
             'task_comment' => [$actor.' commented on a task', 'inbox', 'bg-sky-50 text-sky-600'],
-            'due_reminder' => ['A task is due today', 'clock', 'bg-amber-50 text-amber-600'],
+            'due_reminder' => [
+                ($data['reminder_label'] ?? 'today') === 'tomorrow' ? 'A task is due tomorrow' : 'A task is due today',
+                'clock',
+                'bg-amber-50 text-amber-600',
+            ],
             default => ['A task is due soon', 'clock', 'bg-amber-50 text-amber-600'],
         };
         $createdAt = $notification->created_at;

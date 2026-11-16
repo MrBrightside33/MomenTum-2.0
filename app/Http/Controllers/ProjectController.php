@@ -9,7 +9,6 @@ use App\Http\Requests\StoreProjectRequest;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
-use App\Support\Metrics\ProjectMetrics;
 use App\Support\Metrics\TaskMetrics;
 use App\Support\TaskPresenter;
 use Illuminate\Contracts\View\View;
@@ -24,7 +23,6 @@ class ProjectController extends Controller
         Request $request,
         TaskPresenter $presenter,
         TaskMetrics $taskMetrics,
-        ProjectMetrics $projectMetrics,
     ): View {
         Gate::authorize('viewAny', Project::class);
         $user = $request->user();
@@ -32,7 +30,6 @@ class ProjectController extends Controller
             'user_id' => $user->getKey(),
             'priority' => TaskPriority::High->value,
         ]);
-        $projectProgress = $projectMetrics->progress(['user_id' => $user->getKey()]);
         $projects = Project::query()
             ->visibleTo($user)
             ->with([
@@ -52,10 +49,10 @@ class ProjectController extends Controller
             ])
             ->orderBy('name')
             ->get()
-            ->flatMap(function (Project $project) use ($user, $presenter, $projectProgress): array {
+            ->flatMap(function (Project $project) use ($user, $presenter): array {
                 return $project->tasks
                     ->filter(fn (Task $task): bool => $task->priority === TaskPriority::High)
-                    ->map(function (Task $task) use ($project, $user, $presenter, $projectProgress): array {
+                    ->map(function (Task $task) use ($project, $user, $presenter): array {
                         $task->setRelation('project', $project);
                         $presented = $presenter->present($task, $user);
                         $members = collect([$project->owner, $task->creator])
@@ -77,7 +74,7 @@ class ProjectController extends Controller
                                 TaskStatus::InProgress => ProjectStatus::InProgress->value,
                                 TaskStatus::Completed => ProjectStatus::Completed->value,
                             },
-                            'progress' => $projectProgress[$project->getKey()] ?? 0,
+                            'progress' => $presented['progress'],
                             'completed_task_count' => $task->status === TaskStatus::Completed ? 1 : 0,
                             'task_count' => 1,
                             'collaboration' => $members->count() > 1 ? 'Team project' : 'One-person project',
@@ -123,7 +120,6 @@ class ProjectController extends Controller
         string $task,
         TaskPresenter $presenter,
         TaskMetrics $taskMetrics,
-        ProjectMetrics $projectMetrics,
     ): View|RedirectResponse {
         if (! ctype_digit($task)) {
             return redirect()->route('projects.index')->with('status', "Project not found or you don't have access");
@@ -147,7 +143,7 @@ class ProjectController extends Controller
             return redirect()->route('projects.index')->with('status', "Project not found or you don't have access");
         }
 
-        return $this->index($request, $presenter, $taskMetrics, $projectMetrics)
+        return $this->index($request, $presenter, $taskMetrics)
             ->with('openedTask', $presenter->present($taskModel, $user));
     }
 

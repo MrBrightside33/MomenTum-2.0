@@ -99,7 +99,7 @@ Route::middleware(['auth', 'auth.session', EnsureActiveUser::class])->group(func
     Route::post('/tasks/{task}/comments', [TaskCommentController::class, 'store'])->name('tasks.comments.store');
 });
 
-Route::middleware(['auth', 'admin'])->group(function (): void {
+Route::middleware(['auth', 'auth.session', 'admin'])->group(function (): void {
     Route::get('/admin', AdminOverviewController::class)->name('admin.overview');
     Route::get('/admin/overview/data', [AdminOverviewController::class, 'data'])->name('admin.overview.data');
     Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');

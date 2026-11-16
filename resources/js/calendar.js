@@ -29,6 +29,7 @@ const initializeCalendar = () => {
     const notificationButton = root.querySelector('[data-calendar-enable-notifications]');
     const filterButtons = Array.from(root.querySelectorAll('[data-calendar-filter]'));
     const today = root.dataset.today;
+    const timezone = root.dataset.timezone;
     const scheduleDeleteUrlTemplate = root.dataset.calendarDeleteUrlTemplate;
     const notifiedTaskIds = new Set();
     let activeFilter = 'all';
@@ -37,7 +38,7 @@ const initializeCalendar = () => {
     let currentToday = today;
     let schedules = [];
 
-    if (!taskData || !scheduleData || !calendarGrid || !today) {
+    if (!taskData || !scheduleData || !calendarGrid || !today || !timezone) {
         console.error('Calendar initialization is missing required page data.');
         return;
     }
@@ -71,6 +72,18 @@ const initializeCalendar = () => {
         const day = String(date.getDate()).padStart(2, '0');
 
         return `${year}-${month}-${day}`;
+    };
+
+    const todayInTimezone = () => {
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).formatToParts(new Date());
+        const dateParts = Object.fromEntries(parts.map(({type, value}) => [type, value]));
+
+        return `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
     };
 
     const dateOrdinal = (dateString) => {
@@ -472,7 +485,7 @@ const initializeCalendar = () => {
     renderUpcomingDeadlines();
     renderDeadlineAlerts();
     window.setInterval(() => {
-        const newToday = dateKey(new Date());
+        const newToday = todayInTimezone();
 
         if (newToday === currentToday) {
             return;

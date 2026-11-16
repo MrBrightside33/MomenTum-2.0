@@ -1,7 +1,13 @@
 <?php
 
+use Illuminate\Support\ConfigurationUrlParser;
 use Illuminate\Support\Str;
 use Pdo\Mysql;
+
+$directDatabaseUrl = env('DATABASE_URL_UNPOOLED', env('DB_URL_UNPOOLED'));
+$directDatabaseConfig = $directDatabaseUrl
+    ? (new ConfigurationUrlParser)->parseConfiguration($directDatabaseUrl)
+    : [];
 
 return [
 
@@ -64,6 +70,26 @@ return [
             ]) : [],
         ],
 
+        'mysql_old' => [
+            'driver' => 'mysql',
+            'host' => env('MYSQL_OLD_HOST', 'mysql-import'),
+            'port' => env('MYSQL_OLD_PORT', '3306'),
+            'database' => env('MYSQL_OLD_DATABASE', 'task_manager'),
+            'username' => env('MYSQL_OLD_USERNAME', 'root'),
+            'password' => env('MYSQL_OLD_PASSWORD', 'rootsecret'),
+            'unix_socket' => '',
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => false,
+            'engine' => null,
+            'timezone' => '+00:00',
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
@@ -86,7 +112,7 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => env('DB_URL'),
+            'url' => env('DATABASE_URL', env('DB_URL')),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'laravel'),
@@ -97,6 +123,8 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'pooled' => (bool) env('DATABASE_URL'),
+            'direct' => $directDatabaseConfig,
         ],
 
         'sqlsrv' => [

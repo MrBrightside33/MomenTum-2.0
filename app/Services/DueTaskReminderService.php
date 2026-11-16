@@ -62,8 +62,9 @@ class DueTaskReminderService
         foreach ($tasks as $task) {
             $reminderDate = $task->due_date->toDateString();
             $dedupeKey = 'due-reminder:'.$task->getKey().':'.$user->getKey().':'.$today;
+            $reminderLabel = $reminderDate === $today ? 'today' : 'tomorrow';
 
-            $wasCreated = DB::transaction(function () use ($user, $task, $reminderDate, $dedupeKey): bool {
+            $wasCreated = DB::transaction(function () use ($user, $task, $reminderDate, $reminderLabel, $dedupeKey): bool {
                 $inserted = DB::table('task_activities')->insertOrIgnore([
                     'task_id' => $task->getKey(),
                     'user_id' => $user->getKey(),
@@ -78,7 +79,7 @@ class DueTaskReminderService
                     return false;
                 }
 
-                $user->notify(new TaskActivityNotification('due_reminder', $task));
+                $user->notify(new TaskActivityNotification('due_reminder', $task, reminderLabel: $reminderLabel));
 
                 return true;
             });

@@ -7,6 +7,7 @@
     <div
         data-calendar-root
         data-today="{{ $today }}"
+        data-timezone="{{ $timezone }}"
         data-calendar-store-url="{{ route('calendar.events.store') }}"
         data-calendar-delete-url-template="{{ route('calendar.events.destroy', ['calendarEvent' => '__event_id__']) }}"
         class="space-y-6"

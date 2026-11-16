@@ -17,14 +17,20 @@ class CalendarEventController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $today = today();
+        $timezone = $user->settings['timezone'] ?? config('app.timezone');
+
+        if (! in_array($timezone, array_keys(config('settings.timezones', [])), true)) {
+            $timezone = config('app.timezone');
+        }
+
+        $today = today($timezone);
         $tasks = Task::query()
             ->visibleTo($user)
             ->with('project:id,name')
             ->orderBy('due_date')
             ->get();
-        $calendarTasks = $tasks->map(function (Task $task) use ($today): array {
-            $dueDate = Carbon::parse($task->due_date)->startOfDay();
+        $calendarTasks = $tasks->map(function (Task $task) use ($today, $timezone): array {
+            $dueDate = Carbon::parse($task->due_date->toDateString(), $timezone)->startOfDay();
             $daysUntil = (int) $today->copy()->startOfDay()->diffInDays($dueDate, false);
             $isCompleted = $task->status === TaskStatus::Completed;
             $dueLabel = match (true) {
@@ -81,6 +87,7 @@ class CalendarEventController extends Controller
             'dueTodayCount' => $dueTodayCount,
             'dueTomorrowCount' => $dueTomorrowCount,
             'overdueCount' => $overdueCount,
+            'timezone' => $timezone,
             'today' => $today->toDateString(),
             'todayLabel' => $today->format('l, F j, Y'),
             'monthLabel' => $today->format('F Y'),

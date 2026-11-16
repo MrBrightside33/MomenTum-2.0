@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use App\Notifications\TaskActivityNotification;
+use App\Services\DueTaskReminderService;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
@@ -86,6 +87,35 @@ class InboxTest extends TestCase
             'event_type' => 'due_reminder',
             'dedupe_key' => 'due-reminder:'.$dueTask->getKey().':'.$user->getKey().':'.$today,
         ]);
+    }
+
+    public function test_inbox_labels_tomorrow_reminders_as_due_tomorrow(): void
+    {
+        $this->travelTo('2026-11-16 08:00:00');
+        $user = User::factory()->create([
+            'settings' => ['timezone' => 'UTC'],
+        ]);
+        $project = Project::factory()->for($user, 'owner')->create();
+        Task::factory()->for($project)->create([
+            'created_by_id' => $user->getKey(),
+            'title' => 'Today task',
+            'due_date' => '2026-11-16',
+        ]);
+        Task::factory()->for($project)->create([
+            'created_by_id' => $user->getKey(),
+            'title' => 'Tomorrow task',
+            'due_date' => '2026-11-17',
+        ]);
+
+        app(DueTaskReminderService::class)->sendDueReminders($user, now('UTC'), includeTomorrow: true);
+
+        $this->actingAs($user)
+            ->get(route('inbox'))
+            ->assertOk()
+            ->assertSee('A task is due today')
+            ->assertSee('A task is due tomorrow')
+            ->assertSeeText('Today task')
+            ->assertSeeText('Tomorrow task');
     }
 
     public function test_inbox_does_not_create_due_reminders_when_the_user_disabled_them(): void

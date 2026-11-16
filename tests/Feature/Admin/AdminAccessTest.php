@@ -69,4 +69,23 @@ class AdminAccessTest extends TestCase
             'password' => 'password',
         ])->assertRedirectToRoute('admin.overview');
     }
+
+    public function test_password_hash_changes_invalidate_existing_admin_sessions(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->post(route('login.submit'), [
+            'email' => $admin->email,
+            'password' => 'password',
+        ])->assertRedirectToRoute('admin.overview');
+
+        $this->get(route('admin.overview'))->assertOk();
+
+        $admin->forceFill(['password' => 'reset-password'])->save();
+        $this->app['auth']->forgetGuards();
+
+        $this->get(route('admin.overview'))
+            ->assertRedirectToRoute('login');
+        $this->assertGuest();
+    }
 }

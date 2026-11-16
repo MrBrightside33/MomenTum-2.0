@@ -53,8 +53,8 @@ class UserMetrics
                 [$statuses['inactive']['is_active']],
             )
             ->selectRaw(
-                'SUM(CASE WHEN role = ? AND is_active = 1 THEN 1 ELSE 0 END) AS active_admins',
-                [$adminRole],
+                'SUM(CASE WHEN role = ? AND is_active = ? THEN 1 ELSE 0 END) AS active_admins',
+                [$adminRole, $statuses['active']['is_active']],
             )
             ->selectRaw('SUM(CASE WHEN role != ? THEN 1 ELSE 0 END) AS members', [$adminRole])
             ->toBase()

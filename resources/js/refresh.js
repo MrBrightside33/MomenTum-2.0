@@ -1,6 +1,9 @@
 import { request } from './http';
 
-export const refreshRegions = async () => {
+let refreshPromise = null;
+let refreshRequested = false;
+
+const refreshRegionsOnce = async () => {
     const currentRegions = Array.from(document.querySelectorAll('[data-refresh][id]'));
 
     if (currentRegions.length === 0) {
@@ -16,7 +19,6 @@ export const refreshRegions = async () => {
     const { data: documentText } = await request(window.location.href, {
         headers: { Accept: 'text/html' },
         responseType: 'text',
-        key: 'refresh-regions',
     });
 
     const refreshedDocument = new DOMParser().parseFromString(documentText, 'text/html');
@@ -63,4 +65,25 @@ export const refreshRegions = async () => {
         sortControl.value = sortValue;
         sortControl.dispatchEvent(new Event('change', { bubbles: true }));
     }
+};
+
+export const refreshRegions = () => {
+    refreshRequested = true;
+
+    if (refreshPromise) {
+        return refreshPromise;
+    }
+
+    refreshPromise = (async () => {
+        try {
+            while (refreshRequested) {
+                refreshRequested = false;
+                await refreshRegionsOnce();
+            }
+        } finally {
+            refreshPromise = null;
+        }
+    })();
+
+    return refreshPromise;
 };

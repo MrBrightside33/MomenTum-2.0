@@ -137,6 +137,36 @@ class ProjectsTest extends TestCase
             ->assertSee('data-project-task-id="'.$task->getKey().'"', false);
     }
 
+    public function test_updated_task_progress_is_reflected_in_its_card_on_the_main_projects_page(): void
+    {
+        $owner = User::factory()->create();
+        $project = Project::factory()->for($owner, 'owner')->create();
+        $task = Task::factory()->for($project)->create([
+            'created_by_id' => $owner->getKey(),
+            'priority' => TaskPriority::High,
+            'status' => TaskStatus::InProgress,
+            'progress' => 25,
+        ]);
+        Task::factory()->for($project)->create([
+            'created_by_id' => $owner->getKey(),
+            'priority' => TaskPriority::Medium,
+            'status' => TaskStatus::Open,
+            'progress' => 0,
+        ]);
+
+        $this->actingAs($owner)
+            ->patchJson(route('tasks.progress', ['task' => $task]), [
+                'progress' => 50,
+                'expected_progress' => 25,
+            ])
+            ->assertOk();
+
+        $this->get(route('projects.index'))
+            ->assertOk()
+            ->assertSee('aria-valuenow="50"', false)
+            ->assertDontSee('aria-valuenow="25"', false);
+    }
+
     public function test_each_high_priority_task_has_its_own_project_card_and_collaboration_type(): void
     {
         $user = User::factory()->create();
@@ -147,16 +177,20 @@ class ProjectsTest extends TestCase
             'title' => 'Finalize launch checklist',
             'priority' => TaskPriority::High,
             'status' => TaskStatus::InProgress,
+            'progress' => 25,
             'description' => 'Coordinate the release checklist.',
         ]);
         $secondPersonalTask = Task::factory()->for($personalProject)->create([
             'title' => 'Prepare meeting notes',
             'priority' => TaskPriority::High,
+            'status' => TaskStatus::Open,
+            'progress' => 0,
         ]);
         $teamTask = Task::factory()->for($teamProject)->create([
             'title' => 'Review release blockers',
             'priority' => TaskPriority::High,
             'status' => TaskStatus::Completed,
+            'progress' => 100,
             'description' => 'Resolve the blockers with the team.',
         ]);
         $teamTask->assignees()->attach($user);
@@ -176,7 +210,8 @@ class ProjectsTest extends TestCase
             ->assertSee('data-project-task-id="'.$personalTask->getKey().'"', false)
             ->assertSee('data-project-task-id="'.$secondPersonalTask->getKey().'"', false)
             ->assertSee('data-project-task-id="'.$teamTask->getKey().'"', false)
-            ->assertSee('aria-valuenow="13"', false)
+            ->assertSee('aria-valuenow="25"', false)
+            ->assertSee('aria-valuenow="0"', false)
             ->assertSee('aria-valuenow="100"', false)
             ->assertSee(route('projects.show', ['task' => $personalTask->getKey()]), false)
             ->assertSee(route('projects.show', ['task' => $teamTask->getKey()]), false);

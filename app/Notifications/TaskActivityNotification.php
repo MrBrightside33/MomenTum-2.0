@@ -15,6 +15,7 @@ class TaskActivityNotification extends Notification
         private readonly string $event,
         private readonly Task $task,
         private readonly ?User $actor = null,
+        private readonly ?string $reminderLabel = null,
     ) {}
 
     /**
@@ -32,7 +33,7 @@ class TaskActivityNotification extends Notification
     {
         $this->task->loadMissing('project');
 
-        return [
+        $data = [
             'event' => $this->event,
             'category' => match ($this->event) {
                 'task_assigned' => 'task_assignments',
@@ -47,6 +48,12 @@ class TaskActivityNotification extends Notification
             'project_name' => $this->task->project?->name,
             'url' => route('dashboard').'#task-row-'.$this->task->getKey(),
         ];
+
+        if ($this->reminderLabel !== null) {
+            $data['reminder_label'] = $this->reminderLabel;
+        }
+
+        return $data;
     }
 
     /**
